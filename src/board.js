@@ -1,8 +1,10 @@
-import { COLS, ROWS } from './constants.js';
+import { COLS, ROWS, COLORS } from './constants.js';
 
 export class Board {
     constructor() {
         this.grid = this.getEmptyGrid();
+        this.clearingRows = [];
+        this.clearAnimTime = 0;
     }
 
     getEmptyGrid() {
@@ -11,6 +13,8 @@ export class Board {
 
     reset() {
         this.grid = this.getEmptyGrid();
+        this.clearingRows = [];
+        this.clearAnimTime = 0;
     }
 
     isValidMove(piece, dx = 0, dy = 0, matrix = piece.matrix) {
@@ -35,7 +39,7 @@ export class Board {
                 if (value > 0) {
                     let nextX = piece.x + x;
                     let nextY = piece.y + y;
-                    if (nextY >= 0) {
+                    if (nextY >= 0 && nextY < ROWS && nextX >= 0 && nextX < COLS) {
                         this.grid[nextY][nextX] = piece.type;
                     }
                 }
@@ -43,17 +47,61 @@ export class Board {
         });
     }
 
-    clearLines() {
-        let linesCleared = 0;
-        this.grid = this.grid.reduce((acc, row) => {
-            if (row.every((cell) => cell !== 0)) {
-                linesCleared++;
-                acc.unshift(Array(COLS).fill(0));
-            } else {
-                acc.push(row);
+    getFullRows() {
+        const fullRows = [];
+        for (let y = 0; y < ROWS; y++) {
+            if (this.grid[y].every(cell => cell !== 0)) {
+                fullRows.push(y);
             }
-            return acc;
-        }, []);
-        return linesCleared;
+        }
+        return fullRows;
+    }
+
+    getRowColors(row) {
+        return this.grid[row].map(type => COLORS[type] || '#00f0ff');
+    }
+
+    removeRows(rowsToRemove) {
+        if (!rowsToRemove || rowsToRemove.length === 0) return 0;
+        const rowsSet = new Set(rowsToRemove);
+        const newGrid = [];
+        let count = 0;
+
+        for (let y = 0; y < ROWS; y++) {
+            if (rowsSet.has(y)) {
+                count++;
+            } else {
+                newGrid.push(this.grid[y]);
+            }
+        }
+
+        while (newGrid.length < ROWS) {
+            newGrid.unshift(Array(COLS).fill(0));
+        }
+
+        this.grid = newGrid;
+        this.clearingRows = [];
+        this.clearAnimTime = 0;
+        return count;
+    }
+
+    clearLines() {
+        const fullRows = this.getFullRows();
+        return this.removeRows(fullRows);
+    }
+
+    addGarbageLines(count, holeCol = Math.floor(Math.random() * COLS)) {
+        if (count <= 0) return;
+        const actualCount = Math.min(count, ROWS);
+        
+        // Remove top actualCount rows
+        this.grid.splice(0, actualCount);
+
+        // Add actualCount garbage rows at bottom
+        for (let i = 0; i < actualCount; i++) {
+            const row = Array(COLS).fill('G');
+            row[holeCol] = 0;
+            this.grid.push(row);
+        }
     }
 }

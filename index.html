@@ -2,44 +2,223 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris Web Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CYBER TETRIS - Neon Arcade & Battle</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>TETRIS</h1>
-    <div class="game-container">
-        <canvas id="board"></canvas>
-        <div class="sidebar">
-            <div class="stat-item">
-                <div>NEXT</div>
-                <canvas id="next"></canvas>
+    <header class="game-header">
+        <h1 class="logo">CYBER <span class="neon-cyan">TETRIS</span></h1>
+        <!-- Game Mode Nav -->
+        <div class="mode-nav">
+            <button id="nav-solo" class="mode-btn active">👤 SOLO</button>
+            <button id="nav-battle" class="mode-btn">⚔️ ONLINE BATTLE</button>
+        </div>
+    </header>
+
+    <main class="game-container">
+        <!-- Left Column: HOLD & Instructions -->
+        <aside class="sidebar sidebar-left">
+            <div class="glass-panel preview-panel">
+                <div class="panel-header">HOLD</div>
+                <div class="canvas-wrapper">
+                    <canvas id="hold" width="120" height="120"></canvas>
+                </div>
+                <div class="key-hint"><span class="badge">C</span> or <span class="badge">Shift</span></div>
             </div>
-            <div class="stats">
-                <div class="stat-item">
-                    <div>SCORE</div>
-                    <div id="score" class="stat-value">0</div>
+
+            <div class="glass-panel guide-panel desktop-only">
+                <div class="panel-header">CONTROLS</div>
+                <ul class="control-list">
+                    <li><span class="badge">←</span> <span class="badge">→</span> Move</li>
+                    <li><span class="badge">↑</span> Rotate</li>
+                    <li><span class="badge">↓</span> Soft Drop</li>
+                    <li><span class="badge">Space</span> Hard Drop</li>
+                    <li><span class="badge">C</span> / <span class="badge">Shift</span> Hold</li>
+                    <li><span class="badge">P</span> Pause</li>
+                    <li><span class="badge">M</span> Sound Mute</li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Center Column: Board Canvas, Meter & Overlays -->
+        <section class="board-column">
+            <div id="player-label-bar" class="player-label-bar hidden">
+                <span id="player-label" class="player-tag neon-cyan">PLAYER 1</span>
+            </div>
+
+            <div class="board-with-meter">
+                <!-- Incoming Garbage Meter -->
+                <div id="garbage-meter" class="garbage-meter-container hidden" title="Incoming Garbage Gauge">
+                    <div id="garbage-meter-fill" class="garbage-meter-fill"></div>
                 </div>
-                <div class="stat-item">
-                    <div>LEVEL</div>
-                    <div id="level" class="stat-value">1</div>
-                </div>
-                <div class="stat-item">
-                    <div>LINES</div>
-                    <div id="lines" class="stat-value">0</div>
+
+                <div class="board-wrapper">
+                    <canvas id="board" width="300" height="600"></canvas>
+
+                    <!-- Pause Overlay (Solo only) -->
+                    <div id="pause-overlay" class="overlay hidden">
+                        <div class="overlay-card">
+                            <h2 class="overlay-title neon-cyan">PAUSED</h2>
+                            <p class="overlay-sub">PRESS 'P' OR RESUME</p>
+                            <button id="btn-resume" class="arcade-btn neon-btn">RESUME</button>
+                        </div>
+                    </div>
+
+                    <!-- Solo Game Over Overlay -->
+                    <div id="game-over-overlay" class="overlay hidden">
+                        <div class="overlay-card">
+                            <h2 class="overlay-title neon-pink">GAME OVER</h2>
+                            <div class="result-stats">
+                                <div class="result-item">
+                                    <span class="result-label">FINAL SCORE</span>
+                                    <span id="final-score" class="result-val neon-yellow">0</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">HIGH SCORE</span>
+                                    <span id="final-high-score" class="result-val neon-cyan">0</span>
+                                </div>
+                            </div>
+                            <button id="btn-retry" class="arcade-btn neon-btn pulse-glow">PLAY AGAIN</button>
+                        </div>
+                    </div>
+
+                    <!-- Battle Countdown Overlay -->
+                    <div id="countdown-overlay" class="overlay hidden">
+                        <div id="countdown-text" class="countdown-text neon-cyan">3</div>
+                    </div>
+
+                    <!-- Battle Result Overlay -->
+                    <div id="battle-result-overlay" class="overlay hidden">
+                        <div class="overlay-card">
+                            <h2 id="battle-result-title" class="overlay-title neon-yellow">VICTORY! 🏆</h2>
+                            <p id="battle-result-sub" class="overlay-sub">KNOCKOUT!</p>
+                            <div class="battle-btn-group">
+                                <button id="btn-rematch" class="arcade-btn neon-btn pulse-glow">REMATCH</button>
+                                <button id="btn-leave-battle" class="arcade-btn btn-secondary">EXIT</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
+        </section>
+
+        <!-- Opponent Column (Battle Mode Only) -->
+        <section id="opponent-section" class="opponent-column hidden">
+            <div class="player-label-bar">
+                <span class="player-tag neon-pink">OPPONENT</span>
+            </div>
+            <div class="glass-panel opponent-panel">
+                <div class="board-wrapper opponent-board-wrapper">
+                    <canvas id="opponent-board" width="220" height="440"></canvas>
+                </div>
+                <div class="opponent-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">SCORE</span>
+                        <span id="opp-score" class="stat-value neon-yellow">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">LINES</span>
+                        <span id="opp-lines" class="stat-value neon-purple">0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: NEXT, STATS, ACTIONS & MOBILE CONTROLS -->
+        <aside class="sidebar sidebar-right">
+            <div class="glass-panel preview-panel">
+                <div class="panel-header">NEXT</div>
+                <div class="canvas-wrapper">
+                    <canvas id="next" width="120" height="120"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-panel stats-panel">
+                <div class="stat-item">
+                    <span class="stat-label">SCORE</span>
+                    <span id="score" class="stat-value neon-cyan">0</span>
+                </div>
+                <div class="stat-item" id="high-score-container">
+                    <span class="stat-label">HIGH SCORE</span>
+                    <span id="high-score" class="stat-value neon-yellow">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">LEVEL</span>
+                    <span id="level" class="stat-value neon-green">1</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">LINES</span>
+                    <span id="lines" class="stat-value neon-purple">0</span>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button id="btn-sound" class="icon-btn" title="Toggle Sound (M)">
+                    <span id="sound-icon">🔊</span> SOUND
+                </button>
+                <button id="btn-pause" class="icon-btn" title="Pause Game (P)">
+                    ⏸️ PAUSE
+                </button>
+            </div>
+
             <!-- Mobile Controls -->
-            <div class="controls">
-                <div></div>
-                <button id="btn-rotate" class="btn">↻</button>
-                <div></div>
-                <button id="btn-left" class="btn">←</button>
-                <button id="btn-down" class="btn">↓</button>
-                <button id="btn-right" class="btn">→</button>
-                <button id="btn-drop" class="btn btn-wide">HARD DROP</button>
+            <div class="controls-container mobile-only">
+                <div class="controls-grid">
+                    <button id="btn-hold" class="btn btn-secondary">HOLD</button>
+                    <button id="btn-rotate" class="btn btn-action">↻</button>
+                    <div></div>
+
+                    <button id="btn-left" class="btn">←</button>
+                    <button id="btn-down" class="btn">↓</button>
+                    <button id="btn-right" class="btn">→</button>
+
+                    <button id="btn-drop" class="btn btn-wide neon-btn">HARD DROP</button>
+                </div>
             </div>
+        </aside>
+    </main>
+
+    <!-- Online Battle Lobby Modal -->
+    <div id="lobby-modal" class="modal-backdrop hidden">
+        <div class="lobby-card glass-panel">
+            <h2 class="lobby-title neon-cyan">⚔️ ONLINE BATTLE</h2>
+            <p class="modal-desc">リアルタイム通信でおじゃまラインを送り合おう！</p>
+            
+            <div id="lobby-setup-view" class="lobby-actions">
+                <button id="btn-create-room" class="arcade-btn neon-btn pulse-glow">CREATE ROOM (ルーム作成)</button>
+                
+                <div class="divider"><span>OR</span></div>
+                
+                <div class="join-box">
+                    <input type="text" id="input-room-id" placeholder="CODE" maxlength="4" autocomplete="off" spellcheck="false">
+                    <button id="btn-join-room" class="arcade-btn btn-action">JOIN</button>
+                </div>
+            </div>
+
+            <div id="room-status-area" class="room-status-area hidden">
+                <div class="room-info">
+                    <span class="room-label">ROOM:</span>
+                    <span id="display-room-id" class="neon-yellow room-code">----</span>
+                    <button id="btn-copy-link" class="small-btn">📋 COPY LINK</button>
+                </div>
+                <div id="room-players-box" class="room-players-box">
+                    <div id="player1-status" class="player-status-badge neon-cyan">HOST: 接続中</div>
+                    <div id="player2-status" class="player-status-badge">CHALLENGER: 待機中...</div>
+                </div>
+                
+                <div id="host-start-container" class="hidden">
+                    <button id="btn-start-battle" class="arcade-btn neon-btn pulse-glow">START BATTLE</button>
+                </div>
+                <p id="guest-waiting-msg" class="status-msg hidden">ホストの開始を待っています...</p>
+            </div>
+
+            <p id="lobby-error-msg" class="error-msg hidden"></p>
+
+            <button id="btn-close-lobby" class="arcade-btn btn-secondary small-btn close-btn">CANCEL</button>
         </div>
     </div>
 

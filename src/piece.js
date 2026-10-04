@@ -10,8 +10,16 @@ export class Piece {
     }
 
     resetPosition() {
-        this.x = this.type === 'I' ? 3 : 3;
-        this.y = this.type === 'I' ? -1 : 0;
+        if (this.type === 'O') {
+            this.x = 4;
+            this.y = 0;
+        } else if (this.type === 'I') {
+            this.x = 3;
+            this.y = -1;
+        } else {
+            this.x = 3;
+            this.y = 0;
+        }
         this.rotation = 0;
     }
 
@@ -26,7 +34,8 @@ export class Piece {
         const kicks = this.getKicks(prevRotation, nextRotation);
         
         for (const [dx, dy] of kicks) {
-            if (this.board.isValidMove(this, dx, -dy, nextMatrix)) { // dy is inverted in standard grid (y increases downwards)
+            // dy is inverted in standard grid (y increases downwards)
+            if (this.board.isValidMove(this, dx, -dy, nextMatrix)) {
                 this.x += dx;
                 this.y -= dy;
                 this.matrix = nextMatrix;
@@ -67,5 +76,25 @@ export class Piece {
             dy++;
         }
         return this.y + dy;
+    }
+
+    getOccupiedBounds(targetY = this.y) {
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        this.matrix.forEach((row, y) => {
+            row.forEach((val, x) => {
+                if (val > 0) {
+                    const blockX = this.x + x;
+                    const blockY = targetY + y;
+                    minX = Math.min(minX, blockX);
+                    maxX = Math.max(maxX, blockX + 1);
+                    maxY = Math.max(maxY, blockY + 1);
+                }
+            });
+        });
+
+        return { minX, maxX, maxY };
     }
 }

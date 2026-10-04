@@ -1,0 +1,14 @@
+{
+    "name": "Cyber Tetris Dev",
+    "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+    "forwardPorts": [8000],
+    "portsAttributes": {
+        "8000": {
+            "label": "Cyber Tetris Server",
+            "onAutoForward": "silent",
+            "visibility": "public"
+        }
+    },
+    "postStartCommand": "npm start",
+    "remoteUser": "node"
+}
