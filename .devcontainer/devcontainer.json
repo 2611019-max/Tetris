@@ -5,11 +5,9 @@
     "portsAttributes": {
         "8000": {
             "label": "Cyber Tetris Server",
-            "onAutoForward": "silent",
-            "visibility": "public"
+            "onAutoForward": "silent"
         }
     },
     "postCreateCommand": "npm ci",
-    "postStartCommand": "nohup npm start > /tmp/server.log 2>&1 &",
     "remoteUser": "node"
 }
