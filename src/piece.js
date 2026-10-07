@@ -10,7 +10,7 @@ export class Piece {
     }
 
     resetPosition() {
-        if (this.type === 'O') {
+        if (this.type === 'O' || this.type === 'B' || this.type === 'D') {
             this.x = 4;
             this.y = 0;
         } else if (this.type === 'I') {
@@ -65,7 +65,7 @@ export class Piece {
 
     getKicks(from, to) {
         const key = `${from}-${to}`;
-        if (this.type === 'O') return [[0, 0]];
+        if (this.type === 'O' || this.type === 'B' || this.type === 'D') return [[0, 0]];
         if (this.type === 'I') return KICK_DATA.I[key];
         return KICK_DATA.common[key];
     }

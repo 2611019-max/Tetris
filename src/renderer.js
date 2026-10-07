@@ -58,6 +58,16 @@ export class Renderer {
             this.drawClearingFlash(board.clearingRows, board.clearAnimTime);
         }
 
+        // Draw bomb clearing flash animation if active
+        if (board.bombClearingCells && board.bombClearingCells.length > 0) {
+            this.drawBombFlash(board.bombClearingCells, time);
+        }
+
+        // Draw drill clearing flash animation if active
+        if (board.drillClearingCells && board.drillClearingCells.length > 0) {
+            this.drawDrillFlash(board.drillClearingCells, time);
+        }
+
         // Draw particles and floating banners in board space
         if (particleSystem) {
             particleSystem.draw(this.ctx);
@@ -153,6 +163,20 @@ export class Renderer {
                     // Center indicator dot
                     this.ctx.fillStyle = theme ? theme.light : '#ffffff';
                     this.ctx.fillRect(px + s / 2 - 1.5, py + s / 2 - 1.5, 3, 3);
+
+                    if (piece.type === 'B') {
+                        this.ctx.font = `${Math.floor(s * 0.55)}px sans-serif`;
+                        this.ctx.textAlign = 'center';
+                        this.ctx.textBaseline = 'middle';
+                        this.ctx.globalAlpha = Math.min(1, pulse * 2.2);
+                        this.ctx.fillText('💣', px + s / 2, py + s / 2 + 1);
+                    } else if (piece.type === 'D') {
+                        this.ctx.font = `${Math.floor(s * 0.55)}px sans-serif`;
+                        this.ctx.textAlign = 'center';
+                        this.ctx.textBaseline = 'middle';
+                        this.ctx.globalAlpha = Math.min(1, pulse * 2.2);
+                        this.ctx.fillText('⚡', px + s / 2, py + s / 2 + 1);
+                    }
                 }
             });
         });
@@ -223,6 +247,27 @@ export class Renderer {
         ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
         ctx.lineWidth = 1;
         ctx.strokeRect(px + 0.5, py + 0.5, size - 1, size - 1);
+
+        // Special icons for Bomb and Drill
+        if (type === 'B') {
+            ctx.save();
+            ctx.font = `${Math.floor(size * 0.65)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = '#ff3b30';
+            ctx.fillText('💣', px + size / 2, py + size / 2 + 1);
+            ctx.restore();
+        } else if (type === 'D') {
+            ctx.save();
+            ctx.font = `${Math.floor(size * 0.65)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = '#00e5ff';
+            ctx.fillText('⚡', px + size / 2, py + size / 2 + 1);
+            ctx.restore();
+        }
     }
 
     drawClearingFlash(rows, animTime) {
@@ -240,6 +285,44 @@ export class Renderer {
             // Core white line
             this.ctx.fillStyle = '#ffffff';
             this.ctx.fillRect(0, py + BLOCK_SIZE / 2 - 2, this.canvas.width, 4);
+        });
+        this.ctx.restore();
+    }
+
+    drawBombFlash(cells, time) {
+        this.ctx.save();
+        const flashIntensity = 0.5 + 0.5 * Math.sin(time / 25);
+        cells.forEach(({ x, y }) => {
+            const px = x * BLOCK_SIZE;
+            const py = y * BLOCK_SIZE;
+            const jx = (Math.random() - 0.5) * 4;
+            const jy = (Math.random() - 0.5) * 4;
+
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${0.75 + flashIntensity * 0.25})`;
+            this.ctx.shadowColor = '#ff3b30';
+            this.ctx.shadowBlur = 20;
+            this.ctx.fillRect(px + jx, py + jy, BLOCK_SIZE, BLOCK_SIZE);
+
+            this.ctx.strokeStyle = '#ff0055';
+            this.ctx.lineWidth = 2.5;
+            this.ctx.strokeRect(px + jx + 1, py + jy + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+        });
+        this.ctx.restore();
+    }
+
+    drawDrillFlash(cells, time) {
+        this.ctx.save();
+        const flashIntensity = 0.5 + 0.5 * Math.sin(time / 25);
+        cells.forEach(({ x, y }) => {
+            const px = x * BLOCK_SIZE;
+            const py = y * BLOCK_SIZE;
+            const jx = (Math.random() - 0.5) * 3;
+            const jy = (Math.random() - 0.5) * 3;
+
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${0.75 + flashIntensity * 0.25})`;
+            this.ctx.shadowColor = '#00e5ff';
+            this.ctx.shadowBlur = 20;
+            this.ctx.fillRect(px + jx, py + jy, BLOCK_SIZE, BLOCK_SIZE);
         });
         this.ctx.restore();
     }

@@ -316,4 +316,95 @@ export class SoundController {
     playDefeat() {
         this.playGameOver();
     }
+
+    playBomb() {
+        if (this.isMuted) return;
+        this.ensureContext();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        // Deep bass explosion boom
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.exponentialRampToValueAtTime(28, now + 0.38);
+
+        gain.gain.setValueAtTime(0.28, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.42);
+
+        // Secondary sub-boom
+        const subOsc = this.ctx.createOscillator();
+        const subGain = this.ctx.createGain();
+        subOsc.type = 'triangle';
+        subOsc.frequency.setValueAtTime(120, now);
+        subOsc.frequency.exponentialRampToValueAtTime(20, now + 0.45);
+
+        subGain.gain.setValueAtTime(0.3, now);
+        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+        subOsc.connect(subGain);
+        subGain.connect(this.ctx.destination);
+
+        subOsc.start(now);
+        subOsc.stop(now + 0.5);
+    }
+
+    playDrill() {
+        if (this.isMuted) return;
+        this.ensureContext();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        // High-speed energetic laser drill sweep
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.linearRampToValueAtTime(950, now + 0.12);
+        osc.frequency.exponentialRampToValueAtTime(70, now + 0.32);
+
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.35);
+    }
+
+    playLevelUp() {
+        if (this.isMuted) return;
+        this.ensureContext();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        // High-pitched ascending arpeggio fanfare: C5, E5, G5, C6
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+
+            gain.gain.setValueAtTime(0.18, now + idx * 0.07);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.28);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(now + idx * 0.07);
+            osc.stop(now + idx * 0.07 + 0.28);
+        });
+    }
 }

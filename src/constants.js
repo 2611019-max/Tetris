@@ -38,6 +38,12 @@ export const SHAPES = {
         [0, 1, 1],
         [0, 0, 0],
     ],
+    B: [
+        [1],
+    ],
+    D: [
+        [1],
+    ],
 };
 
 // Cyber Neon Jewel Tones
@@ -49,6 +55,8 @@ export const COLORS = {
     S: '#00ff66', // Emerald Neon
     T: '#cc00ff', // Vivid Purple
     Z: '#ff0055', // Crimson Laser
+    B: '#ff3b30', // Crimson Bomb
+    D: '#00e5ff', // Laser Drill
     G: '#718096', // Metallic Garbage
 };
 
@@ -61,6 +69,8 @@ export const BLOCK_THEME = {
     S: { base: '#00e65c', light: '#66ff9e', dark: '#00993d', glow: 'rgba(0, 255, 102, 0.6)' },
     T: { base: '#b800e6', light: '#e066ff', dark: '#7a0099', glow: 'rgba(204, 0, 255, 0.6)' },
     Z: { base: '#ff0055', light: '#ff6699', dark: '#b3003b', glow: 'rgba(255, 0, 85, 0.6)' },
+    B: { base: '#ff2a2a', light: '#ff8585', dark: '#990000', glow: 'rgba(255, 42, 42, 0.8)' },
+    D: { base: '#00c8e6', light: '#7ff0ff', dark: '#006680', glow: 'rgba(0, 200, 230, 0.8)' },
     G: { base: '#4a5568', light: '#8898aa', dark: '#2d3748', glow: 'rgba(113, 128, 150, 0.4)' },
 };
 
@@ -72,6 +82,8 @@ export const GHOST_COLORS = {
     S: 'rgba(0, 255, 102, 0.28)',
     T: 'rgba(204, 0, 255, 0.28)',
     Z: 'rgba(255, 0, 85, 0.28)',
+    B: 'rgba(255, 42, 42, 0.35)',
+    D: 'rgba(0, 200, 230, 0.35)',
     G: 'rgba(113, 128, 150, 0.28)',
 };
 
@@ -109,17 +121,23 @@ export const POINTS = {
     COMBO_BONUS: 50,
 };
 
+export function getLevelSpeed(level) {
+    if (level <= 1) return 800;
+    // Each level accelerates drop speed by ~20% (down to a razor-sharp 40ms limit)
+    return Math.max(40, Math.round(800 * Math.pow(0.80, level - 1)));
+}
+
 export const LEVEL_SPEED = {
     1: 800,
-    2: 716,
-    3: 633,
-    4: 550,
-    5: 466,
-    6: 383,
-    7: 300,
-    8: 216,
-    9: 133,
-    10: 100,
+    2: 640,
+    3: 512,
+    4: 410,
+    5: 328,
+    6: 262,
+    7: 210,
+    8: 168,
+    9: 134,
+    10: 107,
 };
 
 export const LOCK_DELAY_MS = 500;

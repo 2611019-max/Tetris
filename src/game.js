@@ -10,6 +10,7 @@ import {
     BLOCK_THEME,
     POINTS,
     LEVEL_SPEED,
+    getLevelSpeed,
     LOCK_DELAY_MS,
     MAX_LOCK_RESETS,
     LINE_CLEAR_ANIM_MS,
@@ -70,6 +71,15 @@ export class Game {
         this.clearTimer = 0;
         this.linesToClear = [];
 
+        // Special clearing animation states
+        this.isBombClearing = false;
+        this.bombClearTimer = 0;
+        this.bombAffected = null;
+
+        this.isDrillClearing = false;
+        this.drillClearTimer = 0;
+        this.drillAffected = null;
+
         // Lock delay state
         this.isLocking = false;
         this.lockTimer = 0;
@@ -90,7 +100,7 @@ export class Game {
     }
 
     fillBag() {
-        const pieces = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
+        const pieces = ['I', 'J', 'L', 'O', 'S', 'T', 'Z', 'B', 'D'];
         // Fisher-Yates shuffle with seeded or standard random
         for (let i = pieces.length - 1; i > 0; i--) {
             const j = Math.floor(this.seededRandom() * (i + 1));
@@ -127,15 +137,26 @@ export class Game {
                 if (this.clearTimer <= 0) {
                     this.finishLineClear();
                 }
+            } else if (this.isBombClearing) {
+                this.bombClearTimer -= dt;
+                if (this.bombClearTimer <= 0) {
+                    this.finishBombClear();
+                }
+            } else if (this.isDrillClearing) {
+                this.drillClearTimer -= dt;
+                if (this.drillClearTimer <= 0) {
+                    this.finishDrillClear();
+                }
             } else {
                 this.handleGravity(dt);
             }
         }
 
         // Render current frame
+        const isSpecialActive = this.isClearing || this.isBombClearing || this.isDrillClearing;
         this.renderer.draw(
             this.board,
-            this.isClearing ? null : this.activePiece,
+            isSpecialActive ? null : this.activePiece,
             this.nextPiece,
             this.holdPiece,
             this.canHold,
@@ -308,12 +329,151 @@ export class Game {
         if (this.onGarbageChange) this.onGarbageChange(0);
     }
 
+    sendAttack(attackPower) {
+        if (!this.isBattleMode || !this.network || attackPower <= 0) return;
+
+        // Offset incoming pending garbage (相殺)
+        if (this.pendingGarbage.length > 0) {
+            let canceled = 0;
+            while (attackPower > 0 && this.pendingGarbage.length > 0) {
+                if (this.pendingGarbage[0].lines <= attackPower) {
+                    attackPower -= this.pendingGarbage[0].lines;
+                    canceled += this.pendingGarbage[0].lines;
+                    this.pendingGarbage.shift();
+                } else {
+                    this.pendingGarbage[0].lines -= attackPower;
+                    canceled += attackPower;
+                    attackPower = 0;
+                }
+            }
+            if (canceled > 0) {
+                this.particles.spawnText("OFFSET!", 150, 320, '#00ff66', 22, 1100);
+                if (this.onGarbageChange) this.onGarbageChange(this.getPendingGarbageCount());
+            }
+        }
+
+        // Send remaining attack power to opponent
+        if (attackPower > 0) {
+            const holeCol = Math.floor(Math.random() * COLS);
+            this.network.sendGarbage(attackPower, holeCol);
+            this.particles.spawnText(`+${attackPower} ATTACK!`, 150, 260, '#ff0055', 24, 1200);
+        }
+    }
+
     lock() {
         if (!this.activePiece) return;
 
+        const pieceType = this.activePiece.type;
+        const pieceX = this.activePiece.x;
+        const pieceY = this.activePiece.y;
+
+        if (pieceType === 'B') {
+            this.audio.playBomb();
+            this.renderer.triggerShake(0.85);
+
+            const affected = this.board.getBombAffectedCells(pieceX, pieceY);
+            this.bombAffected = affected;
+            this.board.bombClearingCells = affected.cells;
+
+            // 1. Particle sparks & fire
+            this.particles.spawnBombExplosion(pieceX, pieceY);
+            // 2. 3x3 Blast area border & ruined crater cells
+            this.particles.spawnBombBlastArea(affected.bounds, affected.cells, 500);
+            // 3. Expanding shockwave ring
+            this.particles.spawnShockwave(
+                pieceX * BLOCK_SIZE + BLOCK_SIZE / 2,
+                pieceY * BLOCK_SIZE + BLOCK_SIZE / 2,
+                95,
+                '#ff3b30',
+                420
+            );
+
+            const destroyedCount = affected.cells.length;
+            const countText = destroyedCount > 0 ? ` (${destroyedCount} DESTROYED)` : '';
+            this.particles.spawnText(`BOMB! 💥${countText}`, 150, Math.max(45, pieceY * BLOCK_SIZE), '#ff3300', 25, 1300);
+
+            this.isBombClearing = true;
+            this.bombClearTimer = 240;
+            this.activePiece = null;
+            this.broadcastState();
+            return;
+        }
+
+        if (pieceType === 'D') {
+            this.audio.playDrill();
+            this.renderer.triggerShake(0.75);
+
+            const affected = this.board.getDrillAffectedCells(pieceX, pieceY);
+            this.drillAffected = affected;
+            this.board.drillClearingCells = affected.cells;
+
+            this.particles.spawnDrillLaser(pieceX, pieceY);
+            this.particles.spawnDrillBeamArea(pieceX, pieceY, affected.cells, 420);
+            this.particles.spawnShockwave(
+                pieceX * BLOCK_SIZE + BLOCK_SIZE / 2,
+                pieceY * BLOCK_SIZE + BLOCK_SIZE / 2,
+                95,
+                '#00e5ff',
+                380
+            );
+
+            const destroyedCount = affected.cells.length;
+            const countText = destroyedCount > 0 ? ` (${destroyedCount} DESTROYED)` : '';
+            this.particles.spawnText(`DRILL! ⚡${countText}`, 150, Math.max(45, pieceY * BLOCK_SIZE), '#00e5ff', 25, 1300);
+
+            this.isDrillClearing = true;
+            this.drillClearTimer = 220;
+            this.activePiece = null;
+            this.broadcastState();
+            return;
+        }
+
         this.board.lockPiece(this.activePiece);
         this.audio.playLock();
+        this.checkFullRowsOrNextTurn(false);
+    }
 
+    finishBombClear() {
+        this.isBombClearing = false;
+        this.bombClearTimer = 0;
+        const cells = this.bombAffected ? this.bombAffected.cells : [];
+        const count = cells.length;
+        this.board.removeBombCells(cells);
+        this.bombAffected = null;
+
+        if (count > 0) {
+            this.score += count * 50 * this.level;
+            const attackPower = Math.min(4, Math.floor(count / 3));
+            if (attackPower > 0) {
+                this.sendAttack(attackPower);
+            }
+        }
+
+        this.checkFullRowsOrNextTurn(count > 0);
+    }
+
+    finishDrillClear() {
+        this.isDrillClearing = false;
+        this.drillClearTimer = 0;
+        const cells = this.drillAffected ? this.drillAffected.cells : [];
+        const drillX = this.drillAffected ? this.drillAffected.drillX : -1;
+        const drillY = this.drillAffected ? this.drillAffected.drillY : -1;
+        const count = cells.length;
+        this.board.removeDrillCells(cells, drillX, drillY);
+        this.drillAffected = null;
+
+        if (count > 0) {
+            this.score += count * 40 * this.level;
+            const attackPower = Math.min(4, Math.floor(count / 4));
+            if (attackPower > 0) {
+                this.sendAttack(attackPower);
+            }
+        }
+
+        this.checkFullRowsOrNextTurn(count > 0);
+    }
+
+    checkFullRowsOrNextTurn(hadSpecialCleared = false) {
         const fullRows = this.board.getFullRows();
 
         if (fullRows.length > 0) {
@@ -355,37 +515,10 @@ export class Game {
                 );
             }
 
-            // Battle Mode: Attack & Offset calculation
             if (this.isBattleMode && this.network) {
                 const attackTable = [0, 0, 1, 2, 4];
-                let attackPower = (attackTable[fullRows.length] || 0) + Math.max(0, this.combo - 1);
-
-                // Offset incoming pending garbage (相殺)
-                if (attackPower > 0 && this.pendingGarbage.length > 0) {
-                    let canceled = 0;
-                    while (attackPower > 0 && this.pendingGarbage.length > 0) {
-                        if (this.pendingGarbage[0].lines <= attackPower) {
-                            attackPower -= this.pendingGarbage[0].lines;
-                            canceled += this.pendingGarbage[0].lines;
-                            this.pendingGarbage.shift();
-                        } else {
-                            this.pendingGarbage[0].lines -= attackPower;
-                            canceled += attackPower;
-                            attackPower = 0;
-                        }
-                    }
-                    if (canceled > 0) {
-                        this.particles.spawnText("OFFSET!", 150, Math.min(500, centerY + 28), '#00ff66', 22, 1100);
-                        if (this.onGarbageChange) this.onGarbageChange(this.getPendingGarbageCount());
-                    }
-                }
-
-                // Send remaining attack power to opponent
-                if (attackPower > 0) {
-                    const holeCol = Math.floor(Math.random() * COLS);
-                    this.network.sendGarbage(attackPower, holeCol);
-                    this.particles.spawnText(`+${attackPower} ATTACK!`, 150, centerY, '#ff0055', 24, 1200);
-                }
+                const attackPower = (attackTable[fullRows.length] || 0) + Math.max(0, this.combo - 1);
+                this.sendAttack(attackPower);
             }
 
             this.addScore(fullRows.length, this.combo);
@@ -396,8 +529,9 @@ export class Game {
                 this.particles.spawnText("LEVEL UP!", 150, 240, '#00ff66', 26, 1500);
             }
         } else {
-            this.combo = 0;
-            // No lines cleared: push incoming garbage up
+            if (!hadSpecialCleared) {
+                this.combo = 0;
+            }
             this.applyPendingGarbage();
             this.nextTurn();
         }
@@ -494,6 +628,7 @@ export class Game {
         }
 
         if (this.isPaused) return;
+        if (this.isClearing || this.isBombClearing || this.isDrillClearing) return;
 
         if (this.isGameOver) {
             if (!this.isBattleMode && (key === KEY.ENTER || key === KEY.SPACE)) {
