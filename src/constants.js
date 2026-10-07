@@ -40,16 +40,16 @@ export const SHAPES = {
     ],
 };
 
-// Cyber Neon Jewel Tones
+// High-Visibility Cyber Neon Palette - Distinct colors for each piece
 export const COLORS = {
-    I: '#00f0ff', // Cyan Neon
+    I: '#00f0ff', // Cyan Neon (Blue)
     J: '#1b6aff', // Electric Blue
-    L: '#ff8800', // Neon Amber
-    O: '#ffe600', // Electric Gold
-    S: '#00ff66', // Emerald Neon
+    L: '#ff8800', // Neon Amber (Orange)
+    O: '#ffe600', // Electric Gold (Yellow)
+    S: '#00ff66', // Emerald Neon (Green)
     T: '#cc00ff', // Vivid Purple
-    Z: '#ff0055', // Crimson Laser
-    G: '#718096', // Metallic Garbage
+    Z: '#ff0055', // Crimson Laser (Neon Pink)
+    G: '#718096', // Metallic Garbage (Grey)
 };
 
 // Shading and Glow specifications for 3D Beveled Jewel Tiles
@@ -63,6 +63,39 @@ export const BLOCK_THEME = {
     Z: { base: '#ff0055', light: '#ff6699', dark: '#b3003b', glow: 'rgba(255, 0, 85, 0.6)' },
     G: { base: '#4a5568', light: '#8898aa', dark: '#2d3748', glow: 'rgba(113, 128, 150, 0.4)' },
 };
+
+// Special Blocks (Bomb, Vertical Drill, Horizontal Drill)
+export const SPECIAL_TYPE = {
+    BOMB: 'bomb',
+    DRILL_V: 'drill_v',
+    DRILL_H: 'drill_h',
+};
+
+export const SPECIAL_THEME = {
+    bomb: {
+        name: '爆弾',
+        icon: '💣',
+        color: '#ff2244',
+        glow: 'rgba(255, 34, 68, 0.8)',
+        borderColor: '#ff6677',
+    },
+    drill_v: {
+        name: '縦ドリル',
+        icon: '⇕',
+        color: '#00e5ff',
+        glow: 'rgba(0, 229, 255, 0.8)',
+        borderColor: '#80f8ff',
+    },
+    drill_h: {
+        name: '横ドリル',
+        icon: '⇔',
+        color: '#ffaa00',
+        glow: 'rgba(255, 170, 0, 0.8)',
+        borderColor: '#ffdd66',
+    },
+};
+
+export const SPECIAL_SPAWN_RATE = 0.35; // 35% chance that a piece contains a special block
 
 export const GHOST_COLORS = {
     I: 'rgba(0, 240, 255, 0.28)',

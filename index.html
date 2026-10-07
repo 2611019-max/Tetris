@@ -16,6 +16,7 @@
         <div class="mode-nav">
             <button id="nav-solo" class="mode-btn active">👤 SOLO</button>
             <button id="nav-battle" class="mode-btn">⚔️ ONLINE BATTLE</button>
+            <button id="btn-how-to-play" class="mode-btn" title="ゲーム説明・操作方法">📖 遊び方</button>
         </div>
     </header>
 
@@ -219,6 +220,77 @@
             <p id="lobby-error-msg" class="error-msg hidden"></p>
 
             <button id="btn-close-lobby" class="arcade-btn btn-secondary small-btn close-btn">CANCEL</button>
+        </div>
+    </div>
+
+    <!-- Game Instructions / Start Modal -->
+    <div id="instructions-modal" class="modal-backdrop">
+        <div class="instructions-card glass-panel">
+            <div class="instructions-header">
+                <span class="cyber-badge neon-cyan">HOW TO PLAY</span>
+                <h2 class="instructions-title">CYBER <span class="neon-cyan">TETRIS</span></h2>
+                <p class="modal-desc">ブロックを揃えて消去し、ハイスコアを目指せ！</p>
+            </div>
+
+            <div class="instructions-body">
+                <!-- ルール説明 -->
+                <div class="info-block">
+                    <h3 class="info-title neon-yellow">⚡ ゲームのルール</h3>
+                    <ul class="info-list">
+                        <li>落ちてくるブロック（テトリミノ）を隙間なく並べ、<strong>横一列を揃えるとラインが消去</strong>されます。</li>
+                        <li>ブロックが天井（画面最上部）まで積み上がると<strong>ゲームオーバー</strong>になります。</li>
+                        <li><strong>4ライン同時消し（TETRIS）</strong>や連続消し（COMBO）で大量ボーナス得点を獲得！</li>
+                        <li>ラインを消すほどレベルが上がり、ブロックの落下スピードが加速します。</li>
+                    </ul>
+                </div>
+
+                <!-- 操作方法説明 -->
+                <div class="info-block">
+                    <h3 class="info-title neon-cyan">🎮 操作方法 (CONTROLS)</h3>
+                    <div class="controls-grid-info">
+                        <div class="ctrl-item">
+                            <span class="ctrl-keys"><span class="badge">←</span> <span class="badge">→</span></span>
+                            <span class="ctrl-desc">左右移動</span>
+                        </div>
+                        <div class="ctrl-item">
+                            <span class="ctrl-keys"><span class="badge">↑</span></span>
+                            <span class="ctrl-desc">回転</span>
+                        </div>
+                        <div class="ctrl-item">
+                            <span class="ctrl-keys"><span class="badge">↓</span></span>
+                            <span class="ctrl-desc">ソフトドロップ (高速落下)</span>
+                        </div>
+                        <div class="ctrl-item">
+                            <span class="ctrl-keys"><span class="badge">Space</span></span>
+                            <span class="ctrl-desc">ハードドロップ (即時接地)</span>
+                        </div>
+                        <div class="ctrl-item">
+                            <span class="ctrl-keys"><span class="badge">C</span> / <span class="badge">Shift</span></span>
+                            <span class="ctrl-desc">ホールド (一時キープ)</span>
+                        </div>
+                        <div class="ctrl-item">
+                            <span class="ctrl-keys"><span class="badge">P</span></span>
+                            <span class="ctrl-desc">ポーズ (一時停止)</span>
+                        </div>
+                        <div class="ctrl-item">
+                            <span class="ctrl-keys"><span class="badge">M</span></span>
+                            <span class="ctrl-desc">サウンド ON/OFF</span>
+                        </div>
+                    </div>
+                    <p class="mobile-hint">※ スマートフォンでは画面下のオンスクリーンボタンで操作できます</p>
+                </div>
+            </div>
+
+            <!-- スタート操作案内 -->
+            <div class="instructions-footer">
+                <div class="enter-prompt neon-pink">
+                    <span class="enter-key-badge pulse-glow">ENTER ↵</span>
+                    <span class="enter-text">キーを押してゲームスタート</span>
+                </div>
+                <button id="btn-start-game" class="arcade-btn neon-btn pulse-glow btn-start">
+                    GAME START (ENTER)
+                </button>
+            </div>
         </div>
     </div>
 

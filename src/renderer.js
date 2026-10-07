@@ -161,10 +161,10 @@ export class Renderer {
 
     drawJewelBlock(ctx, px, py, size, type) {
         const theme = BLOCK_THEME[type] || {
-            base: '#00f0ff',
-            light: '#ffffff',
-            dark: '#005577',
-            glow: 'rgba(0, 240, 255, 0.5)'
+            base: '#ff0055',
+            light: '#ff6699',
+            dark: '#b3003b',
+            glow: 'rgba(255, 0, 85, 0.5)'
         };
 
         const b = 3.5; // Bevel depth in pixels

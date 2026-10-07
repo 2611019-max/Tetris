@@ -1,10 +1,14 @@
 import { SHAPES, KICK_DATA } from './constants.js';
 
 export class Piece {
-    constructor(type, board) {
+    constructor(type, board, specialData = null) {
         this.type = type;
         this.board = board;
         this.matrix = SHAPES[type].map(row => [...row]);
+        this.specialData = specialData;
+        if (specialData && this.matrix[specialData.y] && this.matrix[specialData.y][specialData.x] !== undefined) {
+            this.matrix[specialData.y][specialData.x] = specialData.type;
+        }
         this.resetPosition();
         this.rotation = 0; // 0, 1, 2, 3
     }
@@ -78,6 +82,14 @@ export class Piece {
         return this.y + dy;
     }
 
+    cloneInitial() {
+        return new Piece(
+            this.type,
+            this.board,
+            this.specialData ? { ...this.specialData } : null
+        );
+    }
+
     getOccupiedBounds(targetY = this.y) {
         let minX = Infinity;
         let maxX = -Infinity;
@@ -85,7 +97,7 @@ export class Piece {
 
         this.matrix.forEach((row, y) => {
             row.forEach((val, x) => {
-                if (val > 0) {
+                if (val !== 0) {
                     const blockX = this.x + x;
                     const blockY = targetY + y;
                     minX = Math.min(minX, blockX);
