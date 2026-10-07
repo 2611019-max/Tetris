@@ -445,8 +445,8 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    network.on('incoming_garbage', ({ lines, holeCol }) => {
-        game.receiveGarbage(lines, holeCol);
+    network.on('incoming_garbage', ({ lines, holeCol, isPerfectClear }) => {
+        game.receiveGarbage(lines, holeCol, isPerfectClear);
     });
 
     network.on('battle_result', ({ result, winner }) => {

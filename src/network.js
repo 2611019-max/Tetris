@@ -87,7 +87,11 @@ export class NetworkManager {
                 break;
 
             case 'incoming_garbage':
-                this.emit('incoming_garbage', { lines: msg.lines, holeCol: msg.holeCol });
+                this.emit('incoming_garbage', {
+                    lines: msg.lines,
+                    holeCol: msg.holeCol,
+                    isPerfectClear: !!msg.isPerfectClear,
+                });
                 break;
 
             case 'battle_result':
@@ -130,8 +134,8 @@ export class NetworkManager {
         this.send('game_state', state);
     }
 
-    sendGarbage(lines, holeCol) {
-        this.send('garbage_attack', { lines, holeCol });
+    sendGarbage(lines, holeCol, isPerfectClear = false) {
+        this.send('garbage_attack', { lines, holeCol, isPerfectClear });
     }
 
     sendGameOver() {

@@ -9,6 +9,7 @@ import {
     BLOCK_SIZE,
     BLOCK_THEME,
     POINTS,
+    PERFECT_CLEAR_ATTACK,
     LEVEL_SPEED,
     getLevelSpeed,
     LOCK_DELAY_MS,
@@ -318,9 +319,14 @@ export class Game {
         return this.pendingGarbage.reduce((sum, item) => sum + item.lines, 0);
     }
 
-    receiveGarbage(lines, holeCol) {
+    receiveGarbage(lines, holeCol, isPerfectClear = false) {
         this.pendingGarbage.push({ lines, holeCol });
         this.audio.playWarning();
+        if (isPerfectClear) {
+            this.renderer.triggerShake(0.8);
+            this.particles.spawnText("⚠️ OPPONENT PERFECT CLEAR!", 150, 180, '#ff0055', 20, 2000);
+            this.particles.spawnText(`+${lines} DANGER LINES!`, 150, 215, '#ff3b30', 20, 2000);
+        }
         if (this.onGarbageChange) this.onGarbageChange(this.getPendingGarbageCount());
     }
 
@@ -337,8 +343,15 @@ export class Game {
         if (this.onGarbageChange) this.onGarbageChange(0);
     }
 
-    sendAttack(attackPower) {
+    sendAttack(attackPower, isPerfectClear = false) {
         if (!this.isBattleMode || !this.network || attackPower <= 0) return;
+
+        // If perfect clear, completely eliminate any pending incoming garbage
+        if (isPerfectClear && this.pendingGarbage.length > 0) {
+            this.pendingGarbage = [];
+            if (this.onGarbageChange) this.onGarbageChange(0);
+            this.particles.spawnText("GARBAGE CLEARED!", 150, 310, '#00ff66', 20, 1400);
+        }
 
         // Offset incoming pending garbage (相殺)
         if (this.pendingGarbage.length > 0) {
@@ -363,8 +376,10 @@ export class Game {
         // Send remaining attack power to opponent
         if (attackPower > 0) {
             const holeCol = Math.floor(Math.random() * COLS);
-            this.network.sendGarbage(attackPower, holeCol);
-            this.particles.spawnText(`+${attackPower} ATTACK!`, 150, 260, '#ff0055', 24, 1200);
+            this.network.sendGarbage(attackPower, holeCol, isPerfectClear);
+            if (!isPerfectClear) {
+                this.particles.spawnText(`+${attackPower} ATTACK!`, 150, 260, '#ff0055', 24, 1200);
+            }
         }
     }
 
@@ -537,6 +552,9 @@ export class Game {
                 this.particles.spawnText("LEVEL UP!", 150, 240, '#00ff66', 26, 1500);
             }
         } else {
+            if (hadSpecialCleared && this.board.isEmpty()) {
+                this.handlePerfectClear(0);
+            }
             if (!hadSpecialCleared) {
                 this.combo = 0;
             }
@@ -550,14 +568,47 @@ export class Game {
     }
 
     finishLineClear() {
+        const clearedCount = this.linesToClear.length;
         this.board.removeRows(this.linesToClear);
         this.isClearing = false;
         this.linesToClear = [];
+
+        // Check for Perfect Clear (All Clear)
+        if (this.board.isEmpty()) {
+            this.handlePerfectClear(clearedCount);
+        }
+
         // After line clear is completed, push any remaining incoming garbage
         this.applyPendingGarbage();
         this.nextTurn();
         if (this.onStateChange) this.onStateChange(this);
         this.broadcastState();
+    }
+
+    handlePerfectClear(linesCleared = 0) {
+        const levelMul = this.level;
+        const lineBonus = (POINTS.PERFECT_CLEAR[linesCleared] || POINTS.PERFECT_CLEAR.BASE) * levelMul;
+        const totalBonus = lineBonus + POINTS.PERFECT_CLEAR.BASE;
+
+        this.score += totalBonus;
+
+        let attackPower = 0;
+        if (this.isBattleMode && this.network) {
+            attackPower = PERFECT_CLEAR_ATTACK;
+            this.sendAttack(attackPower, true);
+        }
+
+        this.audio.playPerfectClear();
+        this.renderer.triggerPerfectClearFlash();
+        this.renderer.triggerShake(0.95);
+        this.particles.spawnPerfectClear(
+            this.canvas.width,
+            this.canvas.height,
+            totalBonus,
+            attackPower
+        );
+
+        this.checkHighScore();
     }
 
     nextTurn() {

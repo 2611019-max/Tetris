@@ -201,6 +201,7 @@ wss.on('connection', (ws) => {
                         type: 'incoming_garbage',
                         lines: msg.lines,
                         holeCol: msg.holeCol,
+                        isPerfectClear: !!msg.isPerfectClear,
                     });
                 }
                 break;

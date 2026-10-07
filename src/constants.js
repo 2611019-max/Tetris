@@ -154,7 +154,16 @@ export const POINTS = {
     SOFT_DROP: 1,
     HARD_DROP: 2,
     COMBO_BONUS: 50,
+    PERFECT_CLEAR: {
+        1: 800,
+        2: 1200,
+        3: 1800,
+        4: 2000,
+        BASE: 3000,
+    },
 };
+
+export const PERFECT_CLEAR_ATTACK = 10;
 
 export function getLevelSpeed(level) {
     if (level <= 1) return 800;

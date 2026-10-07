@@ -30,6 +30,10 @@ export class Board {
         this.drillClearingCells = [];
     }
 
+    isEmpty() {
+        return this.grid.every(row => row.every(cell => cell === 0));
+    }
+
     isValidMove(piece, dx = 0, dy = 0, matrix = piece.matrix) {
         return matrix.every((row, y) => {
             return row.every((value, x) => {

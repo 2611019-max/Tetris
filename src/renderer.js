@@ -14,11 +14,16 @@ export class Renderer {
         // Screen shake settings
         this.trauma = 0;
         this.maxShake = 12; // Maximum pixel displacement
+        this.perfectClearAnim = 0;
         this.lastTime = performance.now();
     }
 
     triggerShake(amount = 0.5) {
         this.trauma = Math.min(1.0, this.trauma + amount);
+    }
+
+    triggerPerfectClearFlash() {
+        this.perfectClearAnim = 1.0;
     }
 
     draw(board, activePiece, nextPiece, holdPiece, canHold, particleSystem, time = performance.now()) {
@@ -71,6 +76,25 @@ export class Renderer {
         // Draw particles and floating banners in board space
         if (particleSystem) {
             particleSystem.draw(this.ctx);
+        }
+
+        // Draw perfect clear golden & cyber flash
+        if (this.perfectClearAnim > 0) {
+            this.ctx.save();
+            const alpha = Math.min(0.65, this.perfectClearAnim * 0.65);
+            this.ctx.globalAlpha = alpha;
+            const grad = this.ctx.createRadialGradient(
+                this.canvas.width / 2, this.canvas.height / 2, 20,
+                this.canvas.width / 2, this.canvas.height / 2, this.canvas.width
+            );
+            grad.addColorStop(0, '#ffd700');
+            grad.addColorStop(0.4, '#00f0ff');
+            grad.addColorStop(0.8, '#ff007f');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            this.ctx.fillStyle = grad;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.restore();
+            this.perfectClearAnim = Math.max(0, this.perfectClearAnim - dt / 600);
         }
 
         this.ctx.restore();

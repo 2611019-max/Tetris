@@ -149,6 +149,60 @@ class ShockwaveRing {
     }
 }
 
+class StarParticle {
+    constructor(x, y, vx, vy, color, size, life, gravity = 0.06, friction = 0.985) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.size = size;
+        this.originalSize = size;
+        this.life = life;
+        this.maxLife = life;
+        this.gravity = gravity;
+        this.friction = friction;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotSpeed = (Math.random() - 0.5) * 0.15;
+    }
+
+    update(dt) {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.vx *= this.friction;
+        this.vy *= this.friction;
+        this.rotation += this.rotSpeed;
+        this.life -= dt;
+        this.size = Math.max(0, this.originalSize * (this.life / this.maxLife));
+    }
+
+    draw(ctx) {
+        if (this.life <= 0 || this.size <= 0) return;
+        const alpha = Math.max(0, this.life / this.maxLife);
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = this.color;
+
+        // 4-pointed diamond star
+        const r = this.size;
+        ctx.beginPath();
+        ctx.moveTo(0, -r);
+        ctx.quadraticCurveTo(0, 0, r, 0);
+        ctx.quadraticCurveTo(0, 0, 0, r);
+        ctx.quadraticCurveTo(0, 0, -r, 0);
+        ctx.quadraticCurveTo(0, 0, 0, -r);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+
 class BombBlastArea {
     constructor(bounds, cells, duration = 480) {
         this.bounds = bounds;
@@ -294,6 +348,7 @@ class DrillBeamArea {
 export class ParticleSystem {
     constructor() {
         this.particles = [];
+        this.starParticles = [];
         this.floatingTexts = [];
         this.blastAreas = [];
         this.shockwaves = [];
@@ -301,6 +356,7 @@ export class ParticleSystem {
 
     reset() {
         this.particles = [];
+        this.starParticles = [];
         this.floatingTexts = [];
         this.blastAreas = [];
         this.shockwaves = [];
@@ -397,6 +453,46 @@ export class ParticleSystem {
         this.floatingTexts.push(new FloatingText(text, x, y, color, fontSize, duration));
     }
 
+    spawnPerfectClear(boardWidth, boardHeight, bonusScore, attackLines = 0) {
+        const cx = boardWidth / 2;
+        const cy = boardHeight / 2;
+
+        // 1. Multiple expanding shockwaves in Gold, Cyan, and Magenta
+        this.shockwaves.push(new ShockwaveRing(cx, cy, 240, '#ffd700', 700));
+        this.shockwaves.push(new ShockwaveRing(cx, cy, 190, '#00f0ff', 600));
+        this.shockwaves.push(new ShockwaveRing(cx, cy, 140, '#ff007f', 500));
+
+        // 2. Sparkling neon diamond starbursts across the whole field
+        const starColors = ['#ffd700', '#fff59d', '#00f0ff', '#ffffff', '#ff007f', '#00ff88'];
+        const starCount = 75;
+        for (let i = 0; i < starCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 2.5 + Math.random() * 8.5;
+            const vx = Math.cos(angle) * speed;
+            const vy = Math.sin(angle) * speed - 1.8;
+            const color = starColors[Math.floor(Math.random() * starColors.length)];
+            const size = 3 + Math.random() * 6;
+            const life = 900 + Math.random() * 900;
+            this.starParticles.push(new StarParticle(cx, cy, vx, vy, color, size, life));
+        }
+
+        // 3. Floating Texts:
+        // Main Title Banner
+        this.floatingTexts.push(
+            new FloatingText("✨ PERFECT CLEAR! ✨", cx, cy - 35, '#ffd700', 26, 2500)
+        );
+        // Bonus Score
+        this.floatingTexts.push(
+            new FloatingText(`+${bonusScore.toLocaleString()} BONUS PTS!`, cx, cy + 12, '#00ff66', 20, 2300)
+        );
+        // Battle Attack (if multiplayer)
+        if (attackLines > 0) {
+            this.floatingTexts.push(
+                new FloatingText(`💥 +${attackLines} MEGA ATTACK!`, cx, cy + 50, '#ff0055', 21, 2300)
+            );
+        }
+    }
+
     update(dt) {
         for (let i = this.blastAreas.length - 1; i >= 0; i--) {
             this.blastAreas[i].update(dt);
@@ -419,10 +515,10 @@ export class ParticleSystem {
             }
         }
 
-        for (let i = this.shockwaves.length - 1; i >= 0; i--) {
-            this.shockwaves[i].update(dt);
-            if (this.shockwaves[i].life <= 0) {
-                this.shockwaves.splice(i, 1);
+        for (let i = this.starParticles.length - 1; i >= 0; i--) {
+            this.starParticles[i].update(dt);
+            if (this.starParticles[i].life <= 0) {
+                this.starParticles.splice(i, 1);
             }
         }
 
@@ -445,9 +541,12 @@ export class ParticleSystem {
             sw.draw(ctx);
         }
 
-        // 3. Particles
+        // 3. Particles & Stars
         for (let p of this.particles) {
             p.draw(ctx);
+        }
+        for (let sp of this.starParticles) {
+            sp.draw(ctx);
         }
 
         // 4. Floating texts on top

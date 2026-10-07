@@ -189,6 +189,54 @@ export class SoundController {
         });
     }
 
+    playPerfectClear() {
+        if (this.isMuted) return;
+        this.ensureContext();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        // 華麗なクリスタルアルペジオの上昇 (C5 -> E5 -> G5 -> B5 -> C6 -> D6 -> E6 -> G6 -> C7)
+        const arpeggio = [523.25, 659.25, 783.99, 987.77, 1046.50, 1174.66, 1318.51, 1567.98, 2093.00];
+
+        arpeggio.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.045);
+
+            gain.gain.setValueAtTime(0.18, now + idx * 0.045);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.045 + 0.35);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(now + idx * 0.045);
+            osc.stop(now + idx * 0.045 + 0.35);
+        });
+
+        // フィニッシュに広がる輝かしいメジャーコード (C6, E6, G6, C7)
+        const chordStartTime = now + arpeggio.length * 0.045;
+        const chord = [1046.50, 1318.51, 1567.98, 2093.00];
+
+        chord.forEach((freq) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, chordStartTime);
+
+            gain.gain.setValueAtTime(0.15, chordStartTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, chordStartTime + 0.9);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(chordStartTime);
+            osc.stop(chordStartTime + 0.9);
+        });
+    }
+
     playGameOver() {
         if (this.isMuted) return;
         this.ensureContext();
