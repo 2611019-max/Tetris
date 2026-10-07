@@ -40,6 +40,39 @@ class Particle {
     }
 }
 
+class Shockwave {
+    constructor(x, y, maxRadius, color = '#ff3344', duration = 300) {
+        this.x = x;
+        this.y = y;
+        this.maxRadius = maxRadius;
+        this.radius = 0;
+        this.color = color;
+        this.life = duration;
+        this.maxLife = duration;
+    }
+
+    update(dt) {
+        this.life -= dt;
+        const progress = Math.max(0, 1 - (this.life / this.maxLife));
+        this.radius = this.maxRadius * Math.sin(progress * Math.PI * 0.5);
+    }
+
+    draw(ctx) {
+        if (this.life <= 0) return;
+        const alpha = Math.max(0, this.life / this.maxLife);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = Math.max(1, 3.5 * alpha);
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
 class FloatingText {
     constructor(text, x, y, color = '#ffffff', fontSize = 20, duration = 1000) {
         this.text = text;
@@ -383,6 +416,13 @@ export class ParticleSystem {
             this.particles[i].update(dt);
             if (this.particles[i].life <= 0) {
                 this.particles.splice(i, 1);
+            }
+        }
+
+        for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+            this.shockwaves[i].update(dt);
+            if (this.shockwaves[i].life <= 0) {
+                this.shockwaves.splice(i, 1);
             }
         }
 

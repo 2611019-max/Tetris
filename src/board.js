@@ -1,5 +1,14 @@
 import { COLS, ROWS, COLORS } from './constants.js';
 
+export function parseCell(cell) {
+    if (!cell || cell === 0) return { type: 0, special: null };
+    if (typeof cell === 'string' && cell.includes(':')) {
+        const [type, special] = cell.split(':');
+        return { type, special };
+    }
+    return { type: cell, special: null };
+}
+
 export class Board {
     constructor() {
         this.grid = this.getEmptyGrid();
@@ -40,11 +49,14 @@ export class Board {
     lockPiece(piece) {
         piece.matrix.forEach((row, y) => {
             row.forEach((value, x) => {
-                if (value > 0) {
+                if (value !== 0) {
                     let nextX = piece.x + x;
                     let nextY = piece.y + y;
                     if (nextY >= 0 && nextY < ROWS && nextX >= 0 && nextX < COLS) {
-                        this.grid[nextY][nextX] = piece.type;
+                        const cellVal = (typeof value === 'string' && value !== '1')
+                            ? `${piece.type}:${value}`
+                            : piece.type;
+                        this.grid[nextY][nextX] = cellVal;
                     }
                 }
             });
@@ -62,7 +74,10 @@ export class Board {
     }
 
     getRowColors(row) {
-        return this.grid[row].map(type => COLORS[type] || '#00f0ff');
+        return this.grid[row].map(cell => {
+            const { type } = parseCell(cell);
+            return COLORS[type] || '#00f0ff';
+        });
     }
 
     removeRows(rowsToRemove) {

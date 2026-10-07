@@ -36,6 +36,7 @@ export class Game {
         this.pendingGarbage = [];
 
         this.highScore = parseInt(localStorage.getItem('tetris_high_score') || '0', 10);
+        this.isStarted = false;
         this.reset();
     }
 
@@ -118,6 +119,13 @@ export class Game {
     }
 
     start() {
+        this.isStarted = true;
+        this.lastTime = performance.now();
+        if (this.requestId) cancelAnimationFrame(this.requestId);
+        this.requestId = requestAnimationFrame(this.update.bind(this));
+    }
+
+    startLoop() {
         this.lastTime = performance.now();
         if (this.requestId) cancelAnimationFrame(this.requestId);
         this.requestId = requestAnimationFrame(this.update.bind(this));
@@ -127,7 +135,7 @@ export class Game {
         const dt = Math.min(100, time - this.lastTime);
         this.lastTime = time;
 
-        if (!this.isPaused && !this.isGameOver) {
+        if (this.isStarted && !this.isPaused && !this.isGameOver) {
             // Update particles and floating text
             this.particles.update(dt);
 
@@ -622,6 +630,13 @@ export class Game {
     }
 
     handleInput(key) {
+        if (!this.isStarted) {
+            if (key === KEY.ENTER) {
+                this.start();
+            }
+            return;
+        }
+
         if (key === KEY.PAUSE_P || key === KEY.PAUSE_P_UP || key === KEY.PAUSE_ESC) {
             this.togglePause();
             return;

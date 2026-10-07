@@ -20,6 +20,11 @@ window.addEventListener('DOMContentLoaded', () => {
     // Mode Navigation
     const navSolo = document.getElementById('nav-solo');
     const navBattle = document.getElementById('nav-battle');
+    const btnHowToPlay = document.getElementById('btn-how-to-play');
+
+    // Instructions / Start Modal
+    const instructionsModal = document.getElementById('instructions-modal');
+    const btnStartGame = document.getElementById('btn-start-game');
 
     // Overlays
     const pauseOverlay = document.getElementById('pause-overlay');
@@ -146,10 +151,39 @@ window.addEventListener('DOMContentLoaded', () => {
 
     updateUI(game);
 
+    // Start Game from Instructions Modal or Enter key
+    function startGame() {
+        game.audio.ensureContext();
+        if (instructionsModal) {
+            instructionsModal.classList.add('hidden');
+        }
+        if (game.isPaused) {
+            game.togglePause();
+        }
+        if (!game.isStarted) {
+            game.audio.playStart();
+            game.start();
+        }
+        updateUI(game);
+    }
+
     // Keyboard controls
     const preventKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Space']);
 
     window.addEventListener('keydown', (e) => {
+        // Instructions modal is visible
+        if (instructionsModal && !instructionsModal.classList.contains('hidden')) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                startGame();
+                return;
+            }
+            if (preventKeys.has(e.key)) {
+                e.preventDefault();
+            }
+            return;
+        }
+
         game.audio.ensureContext();
 
         if (preventKeys.has(e.key)) {
@@ -212,6 +246,24 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (btnStartGame) {
+        btnStartGame.addEventListener('click', () => {
+            startGame();
+        });
+    }
+
+    if (btnHowToPlay) {
+        btnHowToPlay.addEventListener('click', () => {
+            if (instructionsModal) {
+                if (game.isStarted && !game.isPaused && !game.isGameOver && !game.isBattleMode) {
+                    game.togglePause();
+                }
+                instructionsModal.classList.remove('hidden');
+                updateUI(game);
+            }
+        });
+    }
+
     // ==========================================
     // Online Battle & Lobby Logic
     // ==========================================
@@ -238,6 +290,7 @@ window.addEventListener('DOMContentLoaded', () => {
             navSolo.classList.remove('active');
             navBattle.classList.add('active');
             highScoreContainer.classList.add('hidden');
+            if (instructionsModal) instructionsModal.classList.add('hidden');
 
             openLobbyModal();
         }
@@ -454,13 +507,14 @@ window.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomQuery = urlParams.get('room');
     if (roomQuery) {
+        if (instructionsModal) instructionsModal.classList.add('hidden');
         setGameMode('battle');
         inputRoomId.value = roomQuery.toUpperCase();
         network.connect().then(() => {
             network.joinRoom(roomQuery.toUpperCase());
         });
     } else {
-        // Start default solo mode
-        game.start();
+        // Start default solo mode: run rendering loop, waiting for Enter to start
+        game.startLoop();
     }
 });
